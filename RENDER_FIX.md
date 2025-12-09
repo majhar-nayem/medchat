@@ -34,6 +34,7 @@ services:
 ### Solution 3: Add Clean Build Command
 
 In Render dashboard:
+
 1. Go to your service → **Settings**
 2. Under **Build Command**, add:
    ```bash
@@ -47,6 +48,7 @@ In Render dashboard:
 ### Solution 4: Delete and Recreate Service
 
 If above don't work:
+
 1. Delete the current service in Render
 2. Create a new web service
 3. Connect your GitHub repo again
@@ -87,6 +89,7 @@ services:
 ## ⚡ Quick Steps (Most Likely to Work)
 
 1. **In Render Dashboard:**
+
    - Go to your service
    - Click **Settings**
    - Scroll to **Build & Deploy**
@@ -94,6 +97,7 @@ services:
    - Click **Save Changes**
 
 2. **Manual Deploy:**
+
    - Click **Manual Deploy** button
    - Select **Deploy latest commit**
    - Wait for build to complete
@@ -113,4 +117,3 @@ services:
 3. **Manual Deploy** → **Deploy latest commit**
 
 This fixes 90% of these errors!
-
