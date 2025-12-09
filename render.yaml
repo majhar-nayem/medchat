@@ -2,6 +2,13 @@ services:
   - type: web
     name: medi-genius
     env: python
-    buildCommand: ""
-    startCommand: gunicorn app:app -b 0.0.0.0:$PORT
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     plan: free
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: FLASK_ENV
+        value: production
