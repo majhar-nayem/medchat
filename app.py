@@ -445,8 +445,10 @@ def chat():
         if not message:
             return jsonify({'error': 'No message provided'}), 400
         
-        if not workflow_app:
-            return jsonify({'error': 'System not initialized'}), 500
+        # Lazy load workflow if needed (for free tier memory optimization)
+        workflow = get_workflow()
+        if not workflow:
+            return jsonify({'error': 'System not initialized. Please try again in a moment.'}), 500
         
         # Get user_id for linking messages
         user_id = session.get('user_id')
