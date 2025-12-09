@@ -9,11 +9,13 @@ Your app is too memory-intensive for Render's **free tier (512MB)**. The ML mode
 ### Solution 1: Upgrade to Paid Tier (Easiest)
 
 **Render Starter Plan ($7/month):**
+
 - 512MB → **2GB RAM**
 - Enough for your ML app
 - Always-on (no spin-down)
 
 **Steps:**
+
 1. Render Dashboard → Your Service → Settings
 2. Change plan from **Free** to **Starter ($7/month)**
 3. Redeploy
@@ -21,11 +23,13 @@ Your app is too memory-intensive for Render's **free tier (512MB)**. The ML mode
 ### Solution 2: Use Railway Instead (Free Tier with More Memory)
 
 **Railway free tier:**
+
 - $5 credit/month (usually enough)
 - More flexible memory limits
 - Better for ML apps
 
 **Steps:**
+
 1. Go to [railway.app](https://railway.app)
 2. New Project → Deploy from GitHub
 3. Select your repo
@@ -77,7 +81,7 @@ def initialize_system():
         init_auth_db()
         # Skip vector store initialization
         return
-    
+
     # Full initialization for paid tiers
     # ... rest of code
 ```
@@ -85,6 +89,7 @@ def initialize_system():
 ## 🎯 Recommended: Upgrade to Starter Plan
 
 **Why?**
+
 - ✅ Easiest solution (no code changes)
 - ✅ Only $7/month
 - ✅ 2GB RAM (enough for your app)
@@ -92,6 +97,7 @@ def initialize_system():
 - ✅ Better performance
 
 **Cost comparison:**
+
 - Free tier: $0 but crashes
 - Starter plan: $7/month, works perfectly
 - Your time debugging: Worth more than $7
@@ -102,14 +108,14 @@ I'll create a memory-optimized version that lazy loads everything.
 
 ## 📊 Memory Usage Breakdown
 
-| Component | Memory |
-|-----------|--------|
-| Python + Flask | ~100MB |
-| torch (CPU) | ~200-300MB |
-| transformers | ~200-300MB |
-| chromadb | ~100-200MB |
-| sentence-transformers | ~100MB |
-| **Total** | **~700-1000MB** |
+| Component             | Memory          |
+| --------------------- | --------------- |
+| Python + Flask        | ~100MB          |
+| torch (CPU)           | ~200-300MB      |
+| transformers          | ~200-300MB      |
+| chromadb              | ~100-200MB      |
+| sentence-transformers | ~100MB          |
+| **Total**             | **~700-1000MB** |
 
 **Free tier:** 512MB ❌  
 **Starter plan:** 2048MB ✅
@@ -117,15 +123,16 @@ I'll create a memory-optimized version that lazy loads everything.
 ## ⚡ Immediate Action
 
 **Option A (Recommended):**
+
 1. Render Dashboard → Settings
 2. Upgrade to **Starter Plan ($7/month)**
 3. Redeploy
 
 **Option B (Free Alternative):**
+
 1. Switch to Railway (better free tier)
 2. Or use the lazy loading code I'll provide
 
 ---
 
 **I'll create an optimized version with lazy loading next!**
-
