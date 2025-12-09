@@ -483,8 +483,8 @@ def chat():
             except Exception as e:
                 print(f"Error in diabetes detection: {e}")
         
-        # Process query through workflow
-        result = workflow_app.invoke(conversation_state)
+        # Process query through workflow (use lazy-loaded workflow)
+        result = workflow.invoke(conversation_state)
         conversation_states[session_id].update(result)
         
         # Get current timestamp
