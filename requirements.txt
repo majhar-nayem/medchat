@@ -1,0 +1,40 @@
+# Core Requirements
+flask
+python-dotenv
+
+# AI/ML Dependencies
+huggingface-hub
+langchain-core
+langchain-community
+langchain-groq
+langchain_huggingface
+langgraph
+sentence-transformers
+pypdf
+langchain-chroma
+wikipedia
+duckduckgo-search
+transformers
+
+# Vector Database
+chromadb
+
+# Authentication & Security
+passlib
+bcrypt
+
+# PDF Generation
+reportlab
+
+# Scheduling
+apscheduler
+
+# ML Framework (sentence-transformers needs torch, transformers can use either)
+# torch is smaller and faster to install than tensorflow
+torch
+
+# Scikit-learn for diabetes detection model
+scikit-learn
+
+# Production WSGI Server
+gunicorn

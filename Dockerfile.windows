@@ -1,0 +1,88 @@
+# Optimized Dockerfile for Windows/WSL2
+# This version uses multi-stage builds and optimizations for Windows
+
+# Stage 1: Build dependencies
+FROM python:3.11-slim as builder
+
+# Set environment variables for faster builds
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip first
+RUN pip install --upgrade pip setuptools wheel
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies in stages for better caching
+# Install small dependencies first
+RUN pip install --no-cache-dir \
+    flask \
+    python-dotenv \
+    passlib \
+    bcrypt \
+    reportlab \
+    apscheduler \
+    scikit-learn
+
+# Install medium dependencies
+RUN pip install --no-cache-dir \
+    huggingface-hub \
+    langchain-core \
+    langchain-community \
+    langchain-groq \
+    langchain_huggingface \
+    langgraph \
+    pypdf \
+    langchain-chroma \
+    wikipedia \
+    duckduckgo-search
+
+# Install large ML dependencies (these take the longest)
+# Use pre-built wheels when possible (CPU-only for faster install)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install transformers and sentence-transformers
+RUN pip install --no-cache-dir transformers sentence-transformers
+
+# Install chromadb last (can be slow)
+RUN pip install --no-cache-dir chromadb
+
+# Stage 2: Runtime image (much smaller)
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Set working directory
+WORKDIR /app
+
+# Copy application files
+COPY . /app
+
+# Create necessary directories
+RUN mkdir -p /app/chat_db /app/medical_db /app/data
+
+# Expose port
+EXPOSE 5000
+
+# Run the application
+CMD ["python", "app.py"]
+

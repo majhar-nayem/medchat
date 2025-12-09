@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Prescriptions - MediGenius</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        overflow-y: auto;
+      }
+      .prescriptions-container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+      .prescriptions-header {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .prescriptions-header h1 {
+        color: #333;
+        margin: 0;
+      }
+      .back-link {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: 600;
+        margin-right: 20px;
+      }
+      .prescriptions-list {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      .prescription-card {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        background: #f9f9f9;
+      }
+      .prescription-card:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-color: #4caf50;
+      }
+      .prescription-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+      }
+      .prescription-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+      }
+      .prescription-meta {
+        color: #666;
+        font-size: 0.9rem;
+      }
+      .prescription-badge {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #d1e7dd;
+        color: #0f5132;
+      }
+      .prescription-content {
+        margin: 20px 0;
+      }
+      .prescription-section {
+        margin-bottom: 20px;
+      }
+      .prescription-section h3 {
+        color: #333;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .prescription-section p {
+        color: #666;
+        line-height: 1.8;
+        margin-left: 30px;
+      }
+      .prescription-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+      }
+      .btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .btn-success {
+        background: #4caf50;
+        color: white;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+      }
+      .empty-state i {
+        font-size: 5rem;
+        color: #ddd;
+        margin-bottom: 20px;
+      }
+      .empty-state h2 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="prescriptions-container">
+      <div class="prescriptions-header">
+        <div>
+          <a href="/" class="back-link"
+            ><i class="fas fa-arrow-left"></i> Back</a
+          >
+          <h1><i class="fas fa-prescription"></i> My Prescriptions</h1>
+        </div>
+        <button
+          onclick="loadPrescriptions()"
+          class="btn btn-primary"
+          style="margin-left: 10px"
+        >
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
+
+      <div class="prescriptions-list">
+        <div id="prescriptionsContainer">
+          <div class="loading">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem"></i>
+            <p>Loading prescriptions...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function loadPrescriptions() {
+        const container = document.getElementById('prescriptionsContainer');
+        if (!container) {
+          console.error('Prescriptions container not found');
+          return;
+        }
+
+        try {
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+          console.log('📡 Making fetch request to /api/my-prescriptions...');
+          const response = await fetch('/api/my-prescriptions', {
+            signal: controller.signal,
+            credentials: 'same-origin', // Include cookies for session
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          console.log(
+            '📥 Response received:',
+            response.status,
+            response.statusText,
+          );
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            if (response.status === 401) {
+              // Not authenticated, redirect to login
+              window.location.href = '/login';
+              return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          let data;
+          try {
+            data = await response.json();
+            console.log('Prescriptions API response:', data);
+          } catch (jsonError) {
+            console.error('Failed to parse JSON response:', jsonError);
+            const text = await response.text();
+            console.error('Response text:', text);
+            throw new Error('Invalid response from server');
+          }
+
+          // Handle case where success is false
+          if (!data || !data.success) {
+            const errorMsg = data?.error || 'Failed to load prescriptions';
+            console.error('API returned error:', errorMsg);
+            throw new Error(errorMsg);
+          }
+
+          // Ensure prescriptions is an array
+          const prescriptions = Array.isArray(data.prescriptions)
+            ? data.prescriptions
+            : [];
+          console.log(`✅ Received ${prescriptions.length} prescriptions`);
+          if (prescriptions.length > 0) {
+            console.log('📋 First prescription:', prescriptions[0]);
+          }
+
+          if (prescriptions.length > 0) {
+            container.innerHTML = prescriptions
+              .map(
+                (prescription) => `
+                        <div class="prescription-card">
+                            <div class="prescription-header">
+                                <div>
+                                    <div class="prescription-title">${
+                                      prescription.report_title ||
+                                      'Prescription'
+                                    }</div>
+                                    <div class="prescription-meta">
+                                        Prescribed by: <strong>${
+                                          prescription.doctor_name ||
+                                          'Unknown Doctor'
+                                        }</strong> | 
+                                        Date: ${new Date(
+                                          prescription.created_at,
+                                        ).toLocaleDateString('en-US', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric',
+                                        })}
+                                    </div>
+                                </div>
+                                <span class="prescription-badge">
+                                    <i class="fas fa-check-circle"></i> Prescribed
+                                </span>
+                            </div>
+                            
+                            <div class="prescription-content">
+                                ${
+                                  prescription.prescription_text
+                                    ? `
+                                    <div class="prescription-section">
+                                        <h3><i class="fas fa-file-medical"></i> Prescription</h3>
+                                        <p>${prescription.prescription_text}</p>
+                                    </div>
+                                `
+                                    : ''
+                                }
+                                
+                                ${
+                                  prescription.medications
+                                    ? `
+                                    <div class="prescription-section">
+                                        <h3><i class="fas fa-pills"></i> Medications</h3>
+                                        <p>${prescription.medications}</p>
+                                    </div>
+                                `
+                                    : ''
+                                }
+                                
+                                ${
+                                  prescription.dosage
+                                    ? `
+                                    <div class="prescription-section">
+                                        <h3><i class="fas fa-capsules"></i> Dosage</h3>
+                                        <p>${prescription.dosage}</p>
+                                    </div>
+                                `
+                                    : ''
+                                }
+                                
+                                ${
+                                  prescription.instructions
+                                    ? `
+                                    <div class="prescription-section">
+                                        <h3><i class="fas fa-info-circle"></i> Instructions</h3>
+                                        <p>${prescription.instructions}</p>
+                                    </div>
+                                `
+                                    : ''
+                                }
+                            </div>
+                            
+                            <div class="prescription-actions">
+                                <a href="/api/prescription/${
+                                  prescription.id
+                                }/download" class="btn btn-success" download>
+                                    <i class="fas fa-download"></i> Download PDF
+                                </a>
+                                <button class="btn btn-primary" onclick="openReminderModal(${
+                                  prescription.id
+                                }, '${
+                  prescription.medications || prescription.prescription_text
+                }')">
+                                    <i class="fas fa-bell"></i> Set Reminder
+                                </button>
+                            </div>
+                        </div>
+                    `,
+              )
+              .join('');
+          } else {
+            // No prescriptions found - show empty state
+            console.log('No prescriptions found - showing empty state');
+            container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-prescription"></i>
+                            <h2>No Prescriptions Yet</h2>
+                            <p>You don't have any prescriptions yet. Submit a report and wait for a doctor to prescribe.</p>
+                            <a href="/submit-report" class="btn btn-primary" style="margin-top: 20px;">
+                                <i class="fas fa-file-medical"></i> Submit Report
+                            </a>
+                        </div>
+                    `;
+          }
+        } catch (error) {
+          console.error('Error loading prescriptions:', error);
+          const container = document.getElementById('prescriptionsContainer');
+          if (container) {
+            let errorMessage = 'Please try again later.';
+            if (error.name === 'AbortError') {
+              errorMessage =
+                'Request timed out. Please check your connection and try again.';
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
+
+            container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h2>Error Loading Prescriptions</h2>
+                        <p>${errorMessage}</p>
+                        <button onclick="loadPrescriptions()" class="btn btn-primary" style="margin-top: 20px;">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+          }
+        }
+      }
+
+      // Reminder Modal Functions
+      function openReminderModal(prescriptionId, medicationName) {
+        currentPrescriptionId = prescriptionId;
+        document.getElementById('reminderPrescriptionId').value =
+          prescriptionId;
+        document.getElementById('reminderMedication').value =
+          medicationName || '';
+        document.getElementById('reminderModal').style.display = 'flex';
+      }
+
+      function closeReminderModal() {
+        document.getElementById('reminderModal').style.display = 'none';
+        document.getElementById('reminderForm').reset();
+        currentPrescriptionId = null;
+      }
+
+      // Setup reminder form event listener - will be set up after DOM loads
+      function setupReminderFormListener() {
+        const reminderForm = document.getElementById('reminderForm');
+        if (!reminderForm) {
+          console.warn('reminderForm not found yet, will retry');
+          return false;
+        }
+
+        // Only attach if not already attached
+        if (reminderForm.hasAttribute('data-listener-attached')) {
+          return true;
+        }
+
+        reminderForm.setAttribute('data-listener-attached', 'true');
+        reminderForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const prescriptionId = currentPrescriptionId;
+          const medicationName = document
+            .getElementById('reminderMedication')
+            .value.trim();
+          const reminderTime = document.getElementById('reminderTime').value;
+          const frequency = document.getElementById('reminderFrequency').value;
+
+          if (!medicationName || !reminderTime) {
+            alert('Please fill in all required fields');
+            return;
+          }
+
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
+          submitBtn.disabled = true;
+          submitBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Setting...';
+
+          try {
+            const response = await fetch('/api/reminders', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                prescription_id: prescriptionId,
+                medication_name: medicationName,
+                reminder_time: reminderTime,
+                frequency: frequency,
+              }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+              alert(
+                'Reminder set successfully! You will receive email reminders at the specified time.',
+              );
+              closeReminderModal();
+            } else {
+              alert('Error: ' + (data.error || 'Failed to set reminder'));
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalText;
+            }
+          } catch (error) {
+            alert('Connection error. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          }
+        });
+        return true;
+      }
+
+      // Setup reminder modal click listener
+      function setupReminderModalListener() {
+        const reminderModal = document.getElementById('reminderModal');
+        if (!reminderModal) {
+          console.warn('reminderModal not found yet, will retry');
+          return false;
+        }
+
+        // Only attach if not already attached
+        if (reminderModal.hasAttribute('data-listener-attached')) {
+          return true;
+        }
+
+        reminderModal.setAttribute('data-listener-attached', 'true');
+        reminderModal.addEventListener('click', (e) => {
+          if (e.target.id === 'reminderModal') {
+            closeReminderModal();
+          }
+        });
+        return true;
+      }
+
+      let currentPrescriptionId = null;
+
+      // Load prescriptions on page load - ensure it runs
+      console.log('✅ Prescriptions page script loaded');
+      console.log('✅ Document readyState:', document.readyState);
+
+      // Function to ensure loadPrescriptions runs
+      function ensureLoadPrescriptions() {
+        console.log('🔄 Attempting to load prescriptions...');
+        const container = document.getElementById('prescriptionsContainer');
+        if (!container) {
+          console.error('❌ Container not found, retrying in 100ms...');
+          setTimeout(ensureLoadPrescriptions, 100);
+          return;
+        }
+        console.log('✅ Container found, calling loadPrescriptions()');
+        loadPrescriptions();
+      }
+
+      // Multiple ways to ensure everything runs
+      if (document.readyState === 'loading') {
+        console.log(
+          '📝 Document still loading, waiting for DOMContentLoaded...',
+        );
+        document.addEventListener('DOMContentLoaded', function () {
+          console.log(
+            '✅ DOMContentLoaded fired - setting up and loading prescriptions',
+          );
+          setupReminderFormListener();
+          setupReminderModalListener();
+          ensureLoadPrescriptions();
+        });
+      } else {
+        // DOM already loaded
+        console.log(
+          '✅ DOM already loaded - setting up and loading prescriptions immediately',
+        );
+        // Try to setup listeners, retry if elements don't exist yet
+        if (!setupReminderFormListener()) {
+          setTimeout(() => setupReminderFormListener(), 100);
+        }
+        if (!setupReminderModalListener()) {
+          setTimeout(() => setupReminderModalListener(), 100);
+        }
+        ensureLoadPrescriptions();
+      }
+
+      // Also try on window load as backup
+      window.addEventListener('load', function () {
+        console.log('✅ Window loaded - checking if prescriptions loaded');
+        setupReminderFormListener();
+        setupReminderModalListener();
+        const container = document.getElementById('prescriptionsContainer');
+        if (
+          container &&
+          container.innerHTML.includes('Loading prescriptions')
+        ) {
+          console.log('⚠️ Still loading after window load, retrying...');
+          ensureLoadPrescriptions();
+        }
+      });
+    </script>
+
+    <!-- Reminder Modal -->
+    <div class="modal" id="reminderModal" style="display: none">
+      <div class="modal-content" style="max-width: 500px">
+        <div class="modal-header">
+          <h2><i class="fas fa-bell"></i> Set Medication Reminder</h2>
+          <button class="close-modal" onclick="closeReminderModal()">
+            &times;
+          </button>
+        </div>
+        <form id="reminderForm">
+          <input type="hidden" id="reminderPrescriptionId" />
+          <div class="form-group">
+            <label for="reminderMedication">Medication Name *</label>
+            <input
+              type="text"
+              id="reminderMedication"
+              required
+              placeholder="e.g., Paracetamol 500mg"
+            />
+          </div>
+          <div class="form-group">
+            <label for="reminderTime">Reminder Time *</label>
+            <input type="time" id="reminderTime" required />
+          </div>
+          <div class="form-group">
+            <label for="reminderFrequency">Frequency</label>
+            <select
+              id="reminderFrequency"
+              style="
+                width: 100%;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+              "
+            >
+              <option value="daily">Daily</option>
+              <option value="twice_daily">Twice Daily</option>
+              <option value="three_times_daily">Three Times Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-success" style="width: 100%">
+            <i class="fas fa-check"></i> Set Reminder
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <style>
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .modal-header h2 {
+        margin: 0;
+        color: #333;
+      }
+      .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        color: #333;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #333;
+        box-sizing: border-box;
+      }
+    </style>
+  </body>
+</html>

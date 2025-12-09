@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - MediGenius</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .auth-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 40px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      .auth-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .auth-header h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 2rem;
+      }
+      .auth-header p {
+        color: #666;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        color: #333;
+        margin-bottom: 8px;
+        font-weight: 500;
+      }
+      .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        background: #fff;
+        color: #333;
+        font-size: 1rem;
+        transition: all 0.3s;
+        box-sizing: border-box;
+      }
+      .form-group input:focus {
+        outline: none;
+        border-color: #4caf50;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+      }
+      .form-group input::placeholder {
+        color: rgba(0, 0, 0, 0.5);
+      }
+      .btn-auth {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+      }
+      .btn-auth:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
+      .btn-auth:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .error-message {
+        background: rgba(244, 67, 54, 0.1);
+        color: #d32f2f;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+        border: 1px solid rgba(244, 67, 54, 0.3);
+      }
+      .success-message {
+        background: rgba(76, 175, 80, 0.1);
+        color: #2e7d32;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+      }
+      .auth-footer {
+        text-align: center;
+        margin-top: 20px;
+        color: #666;
+      }
+      .auth-footer a {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .auth-footer a:hover {
+        text-decoration: underline;
+      }
+      .password-hint {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="animated-background">
+      <div class="gradient-overlay"></div>
+    </div>
+
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div style="font-size: 3rem; color: #4caf50; margin-bottom: 10px">
+            <i class="fas fa-heartbeat"></i>
+          </div>
+          <h1>MediGenius</h1>
+          <p>Create Your Account</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="username"><i class="fas fa-user"></i> Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Choose a username"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email"><i class="fas fa-envelope"></i> Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Create a password"
+              required
+            />
+            <div class="password-hint">
+              Password must be at least 6 characters
+            </div>
+          </div>
+
+          <button type="submit" class="btn-auth" id="registerBtn">
+            <i class="fas fa-user-plus"></i> Register
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          <p>Already have an account? <a href="/login">Login here</a></p>
+          <p style="margin-top: 10px">
+            <a href="/register-doctor">Register as Doctor instead</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const registerForm = document.getElementById('registerForm');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const registerBtn = document.getElementById('registerBtn');
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        successMessage.style.display = 'none';
+      }
+
+      function showSuccess(message) {
+        successMessage.textContent = message;
+        successMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+      }
+
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        if (password.length < 6) {
+          showError('Password must be at least 6 characters long');
+          return;
+        }
+
+        registerBtn.disabled = true;
+        registerBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> Registering...';
+
+        try {
+          const response = await fetch('/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, email, password }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showSuccess('Registration successful! Redirecting...');
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1000);
+          } else {
+            showError(data.error || 'Registration failed. Please try again.');
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register';
+          }
+        } catch (error) {
+          showError('Connection error. Please try again.');
+          registerBtn.disabled = false;
+          registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register';
+        }
+      });
+    </script>
+  </body>
+</html>

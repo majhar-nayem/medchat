@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submit Report - MediGenius</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      .report-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      .report-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .report-header h1 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+      .report-header p {
+        color: #666;
+      }
+      .form-group {
+        margin-bottom: 25px;
+      }
+      .form-group label {
+        display: block;
+        color: #333;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #333;
+        box-sizing: border-box;
+      }
+      .form-group textarea {
+        min-height: 150px;
+        resize: vertical;
+      }
+      .form-group input:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #4caf50;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+      }
+      .btn-submit {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
+      .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .error-message,
+      .success-message {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+      }
+      .error-message {
+        background: rgba(244, 67, 54, 0.1);
+        color: #d32f2f;
+        border: 1px solid rgba(244, 67, 54, 0.3);
+      }
+      .success-message {
+        background: rgba(76, 175, 80, 0.1);
+        color: #2e7d32;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .back-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="report-container">
+      <a href="/" class="back-link"
+        ><i class="fas fa-arrow-left"></i> Back to Home</a
+      >
+
+      <div class="report-header">
+        <h1>
+          <i class="fas fa-file-medical" style="color: #000"></i> Submit Medical
+          Report
+        </h1>
+        <p>Describe your symptoms and concerns</p>
+      </div>
+
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+
+      <form id="reportForm">
+        <div class="form-group">
+          <label for="title"><i class="fas fa-heading"></i> Report Title</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            placeholder="e.g., Headache and Fever"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="symptoms"
+            ><i class="fas fa-exclamation-triangle"></i> Symptoms *</label
+          >
+          <textarea
+            id="symptoms"
+            name="symptoms"
+            placeholder="Describe your symptoms in detail..."
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="description"
+            ><i class="fas fa-info-circle"></i> Additional Information</label
+          >
+          <textarea
+            id="description"
+            name="description"
+            placeholder="Any additional information, medical history, or concerns..."
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <i class="fas fa-paper-plane"></i> Submit Report
+        </button>
+      </form>
+    </div>
+
+    <script>
+      const reportForm = document.getElementById('reportForm');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const submitBtn = document.getElementById('submitBtn');
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        successMessage.style.display = 'none';
+      }
+
+      function showSuccess(message) {
+        successMessage.textContent = message;
+        successMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+      }
+
+      reportForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById('title').value.trim();
+        const symptoms = document.getElementById('symptoms').value.trim();
+        const description = document.getElementById('description').value.trim();
+
+        if (!title || !symptoms) {
+          showError('Title and symptoms are required');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+        try {
+          const response = await fetch('/submit-report', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ title, symptoms, description }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showSuccess(
+              'Report submitted successfully! A doctor will review it soon.',
+            );
+            reportForm.reset();
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+          } else {
+            showError(
+              data.error || 'Failed to submit report. Please try again.',
+            );
+            submitBtn.disabled = false;
+            submitBtn.innerHTML =
+              '<i class="fas fa-paper-plane"></i> Submit Report';
+          }
+        } catch (error) {
+          showError('Connection error. Please try again.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML =
+            '<i class="fas fa-paper-plane"></i> Submit Report';
+        }
+      });
+    </script>
+  </body>
+</html>

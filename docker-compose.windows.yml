@@ -1,0 +1,32 @@
+# Optimized docker-compose for Windows/WSL2
+# Usage: docker-compose -f docker-compose.windows.yml up
+
+services:
+  medigenius:
+    build:
+      context: .
+      dockerfile: Dockerfile.windows
+    container_name: medigenius-app
+    ports:
+      - "5001:5000"
+    volumes:
+      # Persist databases
+      - ./chat_db:/app/chat_db
+      - ./medical_db:/app/medical_db
+      # Mount data directory for PDF
+      - ./data:/app/data
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      # Optimize for Windows
+      - PIP_NO_CACHE_DIR=1
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
