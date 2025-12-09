@@ -217,30 +217,68 @@ def delete_session(session_id):
     conn.close()
 
 def initialize_system():
+    """Initialize system with lightweight startup for free tier"""
     global workflow_app
-    
-    pdf_path = './data/medical_book.pdf'
-    persist_dir = './medical_db/'
     
     print("Initializing MediGenius System...")
     
-    # Initialize database
+    # Initialize database (lightweight)
     init_db()
     init_auth_db()  # Initialize authentication database
     print("Database initialized...")
     
-    # Try to load existing database
-    existing_db = get_or_create_vectorstore(persist_dir=persist_dir)
+    # Check if we're on a memory-constrained environment (free tier)
+    # Skip heavy model loading at startup to save memory
+    is_memory_constrained = os.environ.get('RENDER', '').lower() == 'true'
     
-    if not existing_db and os.path.exists(pdf_path):
-        print("Creating vector database from PDF...")
-        doc_splits = process_pdf(pdf_path)
-        get_or_create_vectorstore(documents=doc_splits, persist_dir=persist_dir)
-    elif not existing_db:
-        print("No vector database and no PDF found - RAG features will be limited")
+    if is_memory_constrained:
+        print("Running in lightweight mode - models will load on first request")
+        # Don't load heavy models at startup
+        workflow_app = None
+        print("MediGenius Web Interface Ready! (Lightweight mode)")
+        return
     
-    workflow_app = create_workflow()
+    # Full initialization for paid tiers or local
+    pdf_path = './data/medical_book.pdf'
+    persist_dir = './medical_db/'
+    
+    # Try to load existing database (lazy - don't create if not exists)
+    try:
+        existing_db = get_or_create_vectorstore(persist_dir=persist_dir)
+        
+        if not existing_db and os.path.exists(pdf_path):
+            print("Creating vector database from PDF...")
+            doc_splits = process_pdf(pdf_path)
+            get_or_create_vectorstore(documents=doc_splits, persist_dir=persist_dir)
+        elif not existing_db:
+            print("No vector database and no PDF found - RAG features will be limited")
+    except Exception as e:
+        print(f"Warning: Could not initialize vector store: {e}")
+        print("Continuing without RAG functionality...")
+    
+    # Create workflow (this loads models - memory intensive)
+    try:
+        workflow_app = create_workflow()
+        print("Workflow initialized...")
+    except Exception as e:
+        print(f"Warning: Could not initialize workflow: {e}")
+        print("Workflow will be loaded on first request...")
+        workflow_app = None
+    
     print("MediGenius Web Interface Ready!")
+
+def get_workflow():
+    """Lazy load workflow only when needed (for free tier)"""
+    global workflow_app
+    if workflow_app is None:
+        print("Loading workflow (first request - this may take a moment)...")
+        try:
+            workflow_app = create_workflow()
+            print("Workflow loaded successfully!")
+        except Exception as e:
+            print(f"Error loading workflow: {e}")
+            raise
+    return workflow_app
 
 # Authentication decorator
 def login_required(f):
